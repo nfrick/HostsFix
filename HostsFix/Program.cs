@@ -23,7 +23,10 @@ namespace HostsFix {
 
             var text = string.Empty;
 
-            WriteInColor("HOSTS FIX\nby Nelson Frick 2017\n", ConsoleColor.Yellow);
+            WriteInColor(" ┌──────────────────────┐\n", ConsoleColor.Yellow);
+            WriteInColor(" │ HOSTS FIX            │\n", ConsoleColor.Yellow);
+            WriteInColor(" │ by Nelson Frick 2017 │\n", ConsoleColor.Yellow);
+            WriteInColor(" └──────────────────────┘", ConsoleColor.Yellow);
 
             try {
                 using (var sr = new StreamReader(hostfile)) {
@@ -31,7 +34,7 @@ namespace HostsFix {
                 }
             }
             catch (Exception e) {
-                WriteInColor($"\nErro ao abrir arquivo hosts: {e.Message}", ConsoleColor.Red);
+                WriteInColor($"\n Erro ao abrir arquivo hosts: {e.Message}", ConsoleColor.Red);
             }
 
             foreach (var s in sites) {
@@ -43,25 +46,25 @@ namespace HostsFix {
                     using (var sw = new StreamWriter(hostfile)) {
                         sw.Write(text);
                         foreach (var site in sites.Where(s => s.IsMissing)) {
-                            WriteInColor("\nAcrescentando ", ConsoleColor.White);
+                            WriteInColor("\n Acrescentando ", ConsoleColor.White);
                             WriteInColor($"{site.Url}", ConsoleColor.Cyan);
                             sw.WriteLine(site.Line);
                         }
-                        WriteInColor("\n\nO serial number ", ConsoleColor.White);
+                        WriteInColor("\n\n O serial number ", ConsoleColor.White);
                         WriteInColor(serial, ConsoleColor.Green);
                         WriteInColor(" foi copiado para o Clipboard, não se esqueça de colá-lo no Systemcare.", ConsoleColor.White);
                         Clipboard.SetText(serial);
                     }
                 }
                 catch (Exception e) {
-                    WriteInColor($"\nErro ao gravar arquivo: {e.Message}", ConsoleColor.Red);
+                    WriteInColor($"\n Erro ao gravar arquivo: {e.Message}", ConsoleColor.Red);
                 }
             }
             else {
-                WriteInColor("\nArquivo hosts está OK, nada a acrescentar.", ConsoleColor.Green);
+                WriteInColor("\n Arquivo hosts está OK, nada a acrescentar.", ConsoleColor.Green);
             }
 
-            WriteInColor("\n\nAtualização terminada, aperte Enter. ", ConsoleColor.White);
+            WriteInColor("\n\n Atualização terminada, aperte Enter. ", ConsoleColor.White);
             Console.ReadLine();
         }
 
