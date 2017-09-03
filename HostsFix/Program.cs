@@ -30,7 +30,7 @@ namespace HostsFix {
 
             try {
                 using (var sr = new StreamReader(hostfile)) {
-                    text = sr.ReadToEnd();
+                    text = sr.ReadToEnd().Replace("\r\n\r\n\r\n", "\r\n");
                 }
             }
             catch (Exception e) {
