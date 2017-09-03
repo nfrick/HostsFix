@@ -26,7 +26,7 @@ namespace HostsFix {
             WriteInColor(" ┌──────────────────────┐\n", ConsoleColor.Yellow);
             WriteInColor(" │ HOSTS FIX            │\n", ConsoleColor.Yellow);
             WriteInColor(" │ by Nelson Frick 2017 │\n", ConsoleColor.Yellow);
-            WriteInColor(" └──────────────────────┘", ConsoleColor.Yellow);
+            WriteInColor(" └──────────────────────┘\n", ConsoleColor.Yellow);
 
             try {
                 using (var sr = new StreamReader(hostfile)) {
