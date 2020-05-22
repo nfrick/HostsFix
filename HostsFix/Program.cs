@@ -62,6 +62,9 @@ namespace HostsFix {
             }
             else {
                 WriteInColor("\n Arquivo hosts está OK, nada a acrescentar.", ConsoleColor.Green);
+                WriteInColor("\n\n O serial number ", ConsoleColor.White);
+                WriteInColor(serial, ConsoleColor.Cyan);
+                WriteInColor(" foi copiado para o Clipboard.", ConsoleColor.White);
             }
 
             WriteInColor("\n\n Atualização terminada, aperte Enter. ", ConsoleColor.White);

@@ -1,6 +1,6 @@
-﻿using System;
+﻿using DataLayer;
+using System;
 using System.Drawing;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
@@ -8,11 +8,11 @@ using System.Windows.Forms;
 
 namespace HostsFixWin {
     public partial class Form1 : Form {
-        private int number = 0;
+        private int number;
         Assembly thisExe;
         private string[] instrucoes;
         const string serial = "55377-C3F35-752FA-1A4D6";
-
+        
         public Form1() {
             InitializeComponent();
             thisExe = Assembly.GetExecutingAssembly();
@@ -22,7 +22,7 @@ namespace HostsFixWin {
         }
 
         private void button_Click(object sender, EventArgs e) {
-            var btn = (Control) sender;
+            var btn = (Control)sender;
 
             switch (btn.Name) {
                 case "buttonFirst":
@@ -42,7 +42,6 @@ namespace HostsFixWin {
         }
 
         private void ShowImage() {
-            //var image = $"HostsFixWin.Instruções.Instruções {number}.PNG";
             var file = thisExe.GetManifestResourceStream(instrucoes[number]);
             this.pictureBox1.Image = Image.FromStream(file);
             label1.Text = $"{number + 1} de {instrucoes.Length}";
@@ -51,70 +50,49 @@ namespace HostsFixWin {
         }
 
         private void Form1_Load(object sender, EventArgs e) {
-            const string hostfile = @"c:\Windows\System32\drivers\etc\hosts";
-            
-            var sites = new[] {
-                new Site("asc.iobit.com"),
-                new Site("asc55.iobit.com"),
-                new Site("idb.iobit.com"),
-                new Site("is360.iobit.com"),
-                new Site("iunins.iobit.com"),
-                new Site("pf.iobit.com")
-            };
-
-            string text;
-
-            try {
-                using (var sr = new StreamReader(hostfile)) {
-                    text = sr.ReadToEnd().Replace("\r\n\r\n\r\n", "\r\n");
-                }
-            }
-            catch (Exception ex) {
-                WriteInColor($"Erro ao abrir arquivo hosts: {ex.Message}", Color.LightCoral);
+            var hm = new HostsManager();
+            if (!hm.Read(out var text)) {
+                Log(text, Color.LightCoral);
                 return;
             }
 
-            foreach (var site in sites) {
-                site.IsMissing = !text.Contains(site.Url);
-                WriteInColor($"Testando {site.Url}... ", Color.LightSkyBlue);
-                if (site.IsMissing)
-                    WriteInColor("û\n", Color.LightCoral, true);
-                else
-                    WriteInColor("ü\n", Color.LawnGreen, true);
+            hm.Test();
+            foreach (var site in hm.Sites) {
+                Log($"Testando {site.Url}... ", Color.LightSkyBlue);
+                if (site.Found) {
+                    Log("ü\n", Color.LawnGreen, true);
+                }
+                else {
+                    Log("û\n", Color.LightCoral, true);
+                }
             }
 
-            if (sites.Any(s => s.IsMissing)) {
-                try {
-                    using (var sw = new StreamWriter(hostfile)) {
-                        sw.Write(text);
-                        foreach (var site in sites.Where(s => s.IsMissing)) {
-                            WriteInColor("\nAcrescentando ", Color.White);
-                            WriteInColor($"{site.Url}", Color.LightSkyBlue);
-                            sw.WriteLine($"{site.Line}");
-                        }
-                        WriteInColor("\n\nO serial number ", Color.White);
-                        WriteInColor(serial, Color.LawnGreen);
-                        WriteInColor(" foi copiado para o Clipboard, veja nas instruções como colá-lo no Systemcare.", Color.White);
-                        Clipboard.SetText(serial);
-                        textBox1.Text = serial;
-                        ShowImage();
-                    }
+            try {
+                if (hm.Write(out var message)) {  // true if file was changed
+                    Log($"\n{message}", Color.LightCoral);
+                    textBox1.Text = serial;
+                    ShowImage();
                 }
-                catch (Exception ex) {
-                    WriteInColor($"\nErro ao gravar arquivo: {ex.Message}", Color.Yellow);
-                    WriteInColor("\n\nPossível causa: este programa precisa ser executado como 'Administrador'.", Color.White);
+                else {
                     tabControl1.TabPages.Remove(tabInstrucoes);
+                    Log($"\n{message}", Color.LawnGreen);
                     Height /= 2;
                 }
+                Log("\n\nO serial number ", Color.White);
+                Log(serial, Color.LightSkyBlue);
+                Log(" foi copiado para o Clipboard.", Color.White);
+                Clipboard.SetText(serial);
             }
-            else {
+            catch (Exception ex) {
+                Log($"\nErro ao gravar arquivo: {ex.Message}", Color.Yellow);
+                Log("\n\nPossível causa: este programa precisa ser executado como 'Administrador'.",
+                    Color.White);
                 tabControl1.TabPages.Remove(tabInstrucoes);
-                WriteInColor("\nArquivo hosts está OK, nada a acrescentar.", Color.LawnGreen);
                 Height /= 2;
             }
         }
 
-        private void WriteInColor(string text, Color color, bool wingding = false) {
+        private void Log(string text, Color color, bool wingding = false) {
             richTextBox1.SelectionFont = wingding ? new Font("Wingdings", 14) : new Font("Segoe UI", 14);
             richTextBox1.SelectionColor = color;
             richTextBox1.AppendText(text);
@@ -122,16 +100,6 @@ namespace HostsFixWin {
 
         private void buttonCopiar_Click(object sender, EventArgs e) {
             Clipboard.SetText(serial);
-        }
-    }
-
-    public class Site {
-        public string Url { get; }
-        public bool IsMissing { get; set; }
-        public string Line => $"127.0.0.1\t{Url}";
-
-        public Site(string u) {
-            Url = u;
         }
     }
 }

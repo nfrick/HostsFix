@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostsFix", "HostsFix\HostsF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostsFixWin", "HostsFixWin\HostsFixWin.csproj", "{76366216-440A-4938-911C-6144BF9E6A98}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sentinela", "HostsWatcher\Sentinela.csproj", "{4B7B557D-2EAD-422A-A30C-921B63286315}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataLayer", "DataLayer\DataLayer.csproj", "{992DEDC6-0698-452A-BA89-D2F71E3BB4CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +25,14 @@ Global
 		{76366216-440A-4938-911C-6144BF9E6A98}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{76366216-440A-4938-911C-6144BF9E6A98}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{76366216-440A-4938-911C-6144BF9E6A98}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B7B557D-2EAD-422A-A30C-921B63286315}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B7B557D-2EAD-422A-A30C-921B63286315}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B7B557D-2EAD-422A-A30C-921B63286315}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B7B557D-2EAD-422A-A30C-921B63286315}.Release|Any CPU.Build.0 = Release|Any CPU
+		{992DEDC6-0698-452A-BA89-D2F71E3BB4CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{992DEDC6-0698-452A-BA89-D2F71E3BB4CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{992DEDC6-0698-452A-BA89-D2F71E3BB4CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{992DEDC6-0698-452A-BA89-D2F71E3BB4CB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
