@@ -1,17 +1,20 @@
 ﻿using DataLayer;
 using HostsWatcher.Properties;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Permissions;
 using System.Security.Principal;
 using System.Windows.Forms;
+using Tulpep.NotificationWindow;
 
 namespace HostsWatcher {
     public partial class frmSentinela : Form {
-        private int alteracoes = -1;
+        private int _alteracoes = -1;
         private readonly string _logFile = $"{Path.GetDirectoryName(Application.ExecutablePath)}\\log.txt";
+
         public static bool IsAdministrator =>
             new WindowsPrincipal(WindowsIdentity.GetCurrent())
                 .IsInRole(WindowsBuiltInRole.Administrator);
@@ -34,20 +37,24 @@ namespace HostsWatcher {
 
             // Create a new FileSystemWatcher and set its properties.
             FSW_Hosts.Path = HostsManager.HostsLocation;
-            FSW_License.Path = @"C:\Program Files (x86)\Common Files\IObit\Advanced SystemCare";
+            FSW_Hosts.Filter = "hosts";
 
             // Watch for changes in LastAccess and LastWrite times, and
             // the renaming of files or directories.
-            FSW_Hosts.NotifyFilter = FSW_License.NotifyFilter =
+            FSW_Hosts.NotifyFilter =
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-            // Only watch text files.
-            FSW_Hosts.Filter = "hosts";
+            FSW_License.Path = @"C:\Program Files (x86)\Common Files\IObit\Advanced SystemCare";
+            FSW_License.NotifyFilter =
+                NotifyFilters.LastAccess | NotifyFilters.LastWrite |
+                NotifyFilters.FileName | NotifyFilters.DirectoryName;
+
+            CheckNow();
 
             // Begin watching.
-            FSW_Hosts.EnableRaisingEvents = true;
-            FSW_License.EnableRaisingEvents = true;
+            //FSW_Hosts.EnableRaisingEvents = true;
+            //FSW_License.EnableRaisingEvents = true;
         }
 
         #region FORM ---------------------
@@ -90,30 +97,34 @@ namespace HostsWatcher {
 
         private void CheckLicense() {
             FSW_License.EnableRaisingEvents = false;
-            var files = Directory.GetFiles(FSW_License.Path).Select(f => new FileInfo(f));
-            foreach (var file in files) {
-                Log($"{file.Name}\t{file.LastWriteTime}", Color.White);
-            }
 
-            var licenseAV = files.FirstOrDefault(f => f.Name == "License-AV.dat");
-            var licenseAVCopy = files.FirstOrDefault(f => f.Name == "License-AV - Copy.dat");
+            var licenças = Directory.GetFiles($"{Application.StartupPath}\\licença").Select(f => new FileInfo(f)).ToArray();
 
-            if (licenseAV == null) {
-                Log($"Arquivo License-AV.dat não encontrado.", Color.LightBlue);
-            }
-
-            if (licenseAVCopy == null) {
-                Log($"Arquivo License-AV - Copy.dat não encontrado.", Color.LightBlue);
-            }
-
-            if (licenseAVCopy != null &&
-                (licenseAV == null || licenseAV.LastWriteTime != licenseAVCopy.LastWriteTime)) {
-                if (licenseAV != null) {
-                    File.Delete(licenseAV.FullName);
+            var issues = new List<string>();
+            foreach (var licença in licenças) {
+                var arquivo = Directory.GetFiles(FSW_License.Path, licença.Name)
+                    .Select(f => new FileInfo(f)).FirstOrDefault();
+                if (arquivo != null && arquivo.LastWriteTime <= licença.LastWriteTime) {
+                    Log($"Arquivo {licença.Name} OK.", Color.LightBlue);
+                    continue;
+                }
+                if (arquivo == null) {
+                    var issue = $"Arquivo {licença.Name} não encontrado.";
+                    Log(issue, Color.Orange);
+                    issues.Add(issue);
+                }
+                else {
+                    var issue = $"Arquivo {licença.Name} alterado.";
+                    File.Delete(arquivo.FullName);
+                    Log(issue, Color.Yellow);
+                    issues.Add(issue);
                 }
 
-                File.Copy(licenseAVCopy.FullName, $"{FSW_License.Path}\\License-AV.dat");
-                Log($"Arquivo License-AV.dat restaurado do backup.", Color.Yellow);
+                File.Copy(licença.FullName, $"{FSW_License.Path}\\{licença.Name}");
+                Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
+            }
+            if (issues.Any()) {
+                ShowPopup(string.Join("Arquivos restaurados do backup:\n\n", issues.ToArray()));
             }
 
             FSW_License.EnableRaisingEvents = true;
@@ -131,17 +142,18 @@ namespace HostsWatcher {
             hm.Test();
 
             if (hm.SitesFound.Any()) {
-                Log($"{hm.SitesFound.Count()} site(s) encontrados", Color.LightGreen);
+                Log($"{hm.SitesFound.Count()} site(s) encontrados.", Color.LightGreen);
             }
 
             if (hm.SitesMissing.Any()) {
-                Log($"{hm.SitesMissing.Count()} site(s) faltando", Color.LightCoral);
+                Log($"{hm.SitesMissing.Count()} site(s) faltando.", Color.LightCoral);
             }
 
             if (IsAdministrator) {
                 try {
                     hm.Write(out var message2);
                     Log($"{message2}", Color.LightBlue);
+                    ShowPopup(message2);
                 }
                 catch (Exception ex) {
                     Log($"Erro ao gravar arquivo hosts: {ex.Message}", Color.Yellow);
@@ -153,6 +165,17 @@ namespace HostsWatcher {
             FSW_Hosts.EnableRaisingEvents = true;
         }
 
+        private void ShowPopup(string mensagem) {
+            var popup = new PopupNotifier {
+                TitleText = "SENTINELA",
+                ContentText = mensagem,
+                Image = Resources.Police_icon_24,
+                TitleFont = new Font("Segoe UI", 18),
+                ContentFont = new Font("Segoe UI", 12)
+            };
+            popup.Popup();
+        }
+
         private void OnRenamed(object source, RenamedEventArgs e) =>
             // Specify what is done when a file is renamed.
             Log($"Renomeado como {e.FullPath}", Color.LightBlue);
@@ -162,7 +185,7 @@ namespace HostsWatcher {
         }
 
         private void Log(string text, Color color, bool includeTime = false) {
-            notifyIcon.BalloonTipText = $"{++alteracoes} alterações";
+            notifyIcon.BalloonTipText = $"{++_alteracoes} alterações";
 
             text = includeTime ? $"{DateTime.Now:G} {text}" : $"\t{text}";
 
