@@ -45,9 +45,10 @@ namespace HostsWatcher {
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-            FSW_License.Path = Environment.Is64BitOperatingSystem ?
-                @"C:\Program Files (x86)\Common Files\IObit\Advanced SystemCare" :
-                @"C:\Program Files\Common Files\IObit\Advanced SystemCare";
+            FSW_License.Path =
+                $@"{
+                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+                    }\Common Files\IObit\Advanced SystemCare";
             FSW_License.NotifyFilter =
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
@@ -85,8 +86,6 @@ namespace HostsWatcher {
         }
         #endregion FORM ---------------------
 
-        // Define the event handlers.
-
         #region HOSTS -------------
         private void OnChangedHosts(object source, FileSystemEventArgs e) {
             // Specify what is done when a file is changed, created, or deleted.
@@ -100,6 +99,41 @@ namespace HostsWatcher {
 
         private void OnDeletedLHosts(object sender, FileSystemEventArgs e) {
             Log($"{e.Name} deletado.", Color.LightBlue);
+        }
+
+        private void CheckHosts() {
+            FSW_Hosts.EnableRaisingEvents = false;
+            var hm = new HostsManager();
+            if (!hm.Read(out var message)) {
+                Log(message, Color.LightCoral);
+                FSW_Hosts.EnableRaisingEvents = true;
+                return;
+            }
+
+            hm.Test();
+
+            if (hm.SitesFound.Any()) {
+                Log($"{hm.SitesFound.Count()} site(s) encontrados.", Color.LightGreen);
+            }
+
+            if (hm.SitesMissing.Any()) {
+                Log($"{hm.SitesMissing.Count()} site(s) faltando.", Color.LightCoral);
+            }
+
+            if (IsAdministrator) {
+                try {
+                    hm.Write(out var message2);
+                    Log($"{message2}", Color.LightBlue);
+                    ShowPopup(message2);
+                }
+                catch (Exception ex) {
+                    Log($"Erro ao gravar arquivo hosts: {ex.Message}", Color.Yellow);
+                    Log("Possível causa: este programa precisa ser executado como 'Administrador'.",
+                        Color.White);
+                }
+            }
+
+            FSW_Hosts.EnableRaisingEvents = true;
         }
         #endregion HOSTS -------------
 
@@ -142,12 +176,6 @@ namespace HostsWatcher {
 
             FSW_License.EnableRaisingEvents = true;
         }
-        #endregion LICENSE -------------
-
-        private void CheckAll() {
-            CheckHosts();
-            CheckLicense();
-        }
 
         private void CheckLicense() {
             FSW_License.EnableRaisingEvents = false;
@@ -183,40 +211,11 @@ namespace HostsWatcher {
 
             FSW_License.EnableRaisingEvents = true;
         }
+        #endregion LICENSE -------------
 
-        private void CheckHosts() {
-            FSW_Hosts.EnableRaisingEvents = false;
-            var hm = new HostsManager();
-            if (!hm.Read(out var message)) {
-                Log(message, Color.LightCoral);
-                FSW_Hosts.EnableRaisingEvents = true;
-                return;
-            }
-
-            hm.Test();
-
-            if (hm.SitesFound.Any()) {
-                Log($"{hm.SitesFound.Count()} site(s) encontrados.", Color.LightGreen);
-            }
-
-            if (hm.SitesMissing.Any()) {
-                Log($"{hm.SitesMissing.Count()} site(s) faltando.", Color.LightCoral);
-            }
-
-            if (IsAdministrator) {
-                try {
-                    hm.Write(out var message2);
-                    Log($"{message2}", Color.LightBlue);
-                    ShowPopup(message2);
-                }
-                catch (Exception ex) {
-                    Log($"Erro ao gravar arquivo hosts: {ex.Message}", Color.Yellow);
-                    Log("Possível causa: este programa precisa ser executado como 'Administrador'.",
-                        Color.White);
-                }
-            }
-
-            FSW_Hosts.EnableRaisingEvents = true;
+        private void CheckAll() {
+            CheckHosts();
+            CheckLicense();
         }
 
         private static void ShowPopup(string mensagem) {
@@ -269,6 +268,7 @@ namespace HostsWatcher {
         }
         #endregion NOTIFY ICON ---------------------
 
+        #region USER INTERFACE
         private void checkBoxOnOff_CheckedChanged(object sender, EventArgs e) {
             FSW_Hosts.EnableRaisingEvents = checkBoxOnOff.Checked;
             FSW_License.EnableRaisingEvents = checkBoxOnOff.Checked;
@@ -302,5 +302,6 @@ namespace HostsWatcher {
             var frm = new frmEditor() { AllowSave = true, FullName = _logFile };
             frm.ShowDialog();
         }
+        #endregion USER INTERFACE
     }
 }
