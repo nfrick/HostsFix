@@ -45,7 +45,9 @@ namespace HostsWatcher {
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-            FSW_License.Path = @"C:\Program Files (x86)\Common Files\IObit\Advanced SystemCare";
+            FSW_License.Path = Environment.Is64BitOperatingSystem ?
+                @"C:\Program Files (x86)\Common Files\IObit\Advanced SystemCare" :
+                @"C:\Program Files\Common Files\IObit\Advanced SystemCare";
             FSW_License.NotifyFilter =
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
@@ -130,6 +132,10 @@ namespace HostsWatcher {
                 return;
             }
 
+            if (file.Exists) {
+                File.Delete(fullpath);
+            }
+
             File.Copy(licença.FullName, fullpath);
             Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
             ShowPopup($"Arquivo {licença.Name} restaurado do backup.");
@@ -171,9 +177,9 @@ namespace HostsWatcher {
                 File.Copy(licença.FullName, $"{FSW_License.Path}\\{licença.Name}");
                 Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
             }
-            if (issues.Any()) {
-                ShowPopup(string.Join("Arquivos restaurados do backup:\n\n", issues.ToArray()));
-            }
+            ShowPopup(issues.Any()
+                ? string.Join("Arquivos restaurados do backup:\n\n", issues.ToArray())
+                : "Arquivos de licença OK.");
 
             FSW_License.EnableRaisingEvents = true;
         }
@@ -213,7 +219,7 @@ namespace HostsWatcher {
             FSW_Hosts.EnableRaisingEvents = true;
         }
 
-        private void ShowPopup(string mensagem) {
+        private static void ShowPopup(string mensagem) {
             var popup = new PopupNotifier {
                 TitleText = "SENTINELA",
                 ContentText = mensagem,
@@ -265,6 +271,7 @@ namespace HostsWatcher {
 
         private void checkBoxOnOff_CheckedChanged(object sender, EventArgs e) {
             FSW_Hosts.EnableRaisingEvents = checkBoxOnOff.Checked;
+            FSW_License.EnableRaisingEvents = checkBoxOnOff.Checked;
             if (checkBoxOnOff.Checked) {
                 checkBoxOnOff.Image = Resources.switch_on_icon64;
                 toolStripMenuItemOnOff.Image = Resources.switch_off_icon32;

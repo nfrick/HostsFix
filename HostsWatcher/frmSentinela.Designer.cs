@@ -219,7 +219,6 @@
             this.Name = "frmSentinela";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Sentinela";
-            this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form_FormClosing);
             this.Shown += new System.EventHandler(this.Form_Shown);
             this.Resize += new System.EventHandler(this.Form_Resize);
