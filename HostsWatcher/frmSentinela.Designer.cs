@@ -59,10 +59,10 @@
             // 
             this.FSW_Hosts.EnableRaisingEvents = true;
             this.FSW_Hosts.SynchronizingObject = this;
-            this.FSW_Hosts.Changed += new System.IO.FileSystemEventHandler(this.OnChanged);
-            this.FSW_Hosts.Created += new System.IO.FileSystemEventHandler(this.OnChanged);
-            this.FSW_Hosts.Deleted += new System.IO.FileSystemEventHandler(this.OnDeleted);
-            this.FSW_Hosts.Renamed += new System.IO.RenamedEventHandler(this.OnRenamed);
+            this.FSW_Hosts.Changed += new System.IO.FileSystemEventHandler(this.OnChangedHosts);
+            this.FSW_Hosts.Created += new System.IO.FileSystemEventHandler(this.OnChangedHosts);
+            this.FSW_Hosts.Deleted += new System.IO.FileSystemEventHandler(this.OnDeletedLHosts);
+            this.FSW_Hosts.Renamed += new System.IO.RenamedEventHandler(this.OnRenamedHosts);
             // 
             // notifyIcon
             // 
@@ -196,10 +196,10 @@
             // 
             this.FSW_License.EnableRaisingEvents = true;
             this.FSW_License.SynchronizingObject = this;
-            this.FSW_License.Changed += new System.IO.FileSystemEventHandler(this.OnChanged);
-            this.FSW_License.Created += new System.IO.FileSystemEventHandler(this.OnChanged);
-            this.FSW_License.Deleted += new System.IO.FileSystemEventHandler(this.OnDeleted);
-            this.FSW_License.Renamed += new System.IO.RenamedEventHandler(this.OnRenamed);
+            this.FSW_License.Changed += new System.IO.FileSystemEventHandler(this.OnChangedLicense);
+            this.FSW_License.Created += new System.IO.FileSystemEventHandler(this.OnChangedLicense);
+            this.FSW_License.Deleted += new System.IO.FileSystemEventHandler(this.OnDeletedLicense);
+            this.FSW_License.Renamed += new System.IO.RenamedEventHandler(this.OnRenamedLicense);
             // 
             // frmSentinela
             // 

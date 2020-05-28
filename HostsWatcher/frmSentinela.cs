@@ -50,7 +50,7 @@ namespace HostsWatcher {
                 NotifyFilters.LastAccess | NotifyFilters.LastWrite |
                 NotifyFilters.FileName | NotifyFilters.DirectoryName;
 
-            CheckNow();
+            CheckAll();
 
             // Begin watching.
             //FSW_Hosts.EnableRaisingEvents = true;
@@ -84,13 +84,61 @@ namespace HostsWatcher {
         #endregion FORM ---------------------
 
         // Define the event handlers.
-        private void OnChanged(object source, FileSystemEventArgs e) {
+
+        #region HOSTS -------------
+        private void OnChangedHosts(object source, FileSystemEventArgs e) {
             // Specify what is done when a file is changed, created, or deleted.
-            Log($"{e.ChangeType}", Color.LightBlue, true);
-            CheckNow();
+            Log($"{e.ChangeType}", Color.White, true);
+            CheckHosts();
         }
 
-        private void CheckNow() {
+        private void OnRenamedHosts(object source, RenamedEventArgs e) {
+            Log($"{e.OldName} Renomeado como {e.Name}.", Color.LightBlue);
+        }
+
+        private void OnDeletedLHosts(object sender, FileSystemEventArgs e) {
+            Log($"{e.Name} deletado.", Color.LightBlue);
+        }
+        #endregion HOSTS -------------
+
+        #region LICENSE -------------
+        private void OnChangedLicense(object source, FileSystemEventArgs e) {
+            // Specify what is done when a file is changed, created, or deleted.
+            Log($"{e.ChangeType}: {e.Name}", Color.White, true);
+            RestoreLicense(e.FullPath);
+        }
+
+        private void OnRenamedLicense(object source, RenamedEventArgs e) {
+            Log($"{e.OldName} Renomeado como {e.Name}.", Color.LightBlue);
+            RestoreLicense(e.FullPath);
+        }
+
+        private void OnDeletedLicense(object sender, FileSystemEventArgs e) {
+            Log($"{e.Name} deletado.", Color.LightBlue);
+            RestoreLicense(e.FullPath);
+        }
+
+        private void RestoreLicense(string fullpath) {
+            FSW_License.EnableRaisingEvents = false;
+
+            var file = new FileInfo(fullpath);
+
+            var licença = Directory.GetFiles($"{Application.StartupPath}\\licença", file.Name)
+                .Select(f => new FileInfo(f)).FirstOrDefault();
+            if (licença == null) {
+                Log($"Licença original {file.Name} não encontrada.", Color.Yellow);
+                return;
+            }
+
+            File.Copy(licença.FullName, fullpath);
+            Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
+            ShowPopup($"Arquivo {licença.Name} restaurado do backup.");
+
+            FSW_License.EnableRaisingEvents = true;
+        }
+        #endregion LICENSE -------------
+
+        private void CheckAll() {
             CheckHosts();
             CheckLicense();
         }
@@ -176,14 +224,6 @@ namespace HostsWatcher {
             popup.Popup();
         }
 
-        private void OnRenamed(object source, RenamedEventArgs e) =>
-            // Specify what is done when a file is renamed.
-            Log($"Renomeado como {e.FullPath}", Color.LightBlue);
-
-        private void OnDeleted(object sender, FileSystemEventArgs e) {
-            Log($"Arquivo deletado", Color.LightBlue);
-        }
-
         private void Log(string text, Color color, bool includeTime = false) {
             notifyIcon.BalloonTipText = $"{++_alteracoes} alterações";
 
@@ -241,7 +281,7 @@ namespace HostsWatcher {
 
         private void buttonCheckNow_Click(object sender, EventArgs e) {
             Log($"Checagem manual", Color.LightBlue, true);
-            CheckNow();
+            CheckAll();
         }
 
         private void buttonEdit_Click(object sender, EventArgs e) {
