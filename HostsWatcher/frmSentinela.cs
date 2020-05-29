@@ -69,8 +69,8 @@ namespace HostsWatcher {
         }
 
         private void Form_FormClosing(object sender, FormClosingEventArgs e) {
-            Log("Encerrando", Color.Aqua, true);
-            Log("", Color.Aqua);
+            Log("Encerrando\n", Color.Aqua, true);
+            //Log("", Color.Aqua);
         }
 
         private void Form_Resize(object sender, EventArgs e) {
@@ -94,43 +94,38 @@ namespace HostsWatcher {
         }
 
         private void OnRenamedHosts(object source, RenamedEventArgs e) {
-            Log($"{e.OldName} Renomeado como {e.Name}.", Color.LightBlue);
+            Log($"{e.OldName} Renomeado como {e.Name}.", Color.Yellow);
         }
 
         private void OnDeletedLHosts(object sender, FileSystemEventArgs e) {
-            Log($"{e.Name} deletado.", Color.LightBlue);
+            Log($"{e.Name} deletado.", Color.Yellow);
         }
 
         private void CheckHosts() {
             FSW_Hosts.EnableRaisingEvents = false;
             var hm = new HostsManager();
             if (!hm.Read(out var message)) {
-                Log(message, Color.LightCoral);
+                Log(message, Color.Orange, false, true);
                 FSW_Hosts.EnableRaisingEvents = true;
                 return;
             }
 
             hm.Test();
 
-            if (hm.SitesFound.Any()) {
-                Log($"{hm.SitesFound.Count()} site(s) encontrados.", Color.LightGreen);
-            }
-
-            if (hm.SitesMissing.Any()) {
-                Log($"{hm.SitesMissing.Count()} site(s) faltando.", Color.LightCoral);
-            }
-
             if (IsAdministrator) {
                 try {
-                    hm.Write(out var message2);
-                    Log($"{message2}", Color.LightBlue);
-                    ShowPopup(message2);
+                    var cor = hm.Write(out var message2) ? Color.Orange : Color.LightGreen;
+                    Log($"{message2}", cor, false, true);
                 }
                 catch (Exception ex) {
-                    Log($"Erro ao gravar arquivo hosts: {ex.Message}", Color.Yellow);
+                    Log($"Erro ao gravar arquivo hosts: {ex.Message}", Color.OrangeRed);
                     Log("Possível causa: este programa precisa ser executado como 'Administrador'.",
                         Color.White);
                 }
+            }
+            else {
+                var cor = hm.SitesMissing.Any() ? Color.Yellow : Color.LightGreen;
+                Log($"{hm.SitesFound.Count()} site(s) encontrados, {hm.SitesMissing.Count()} site(s) faltando.", cor);
             }
 
             FSW_Hosts.EnableRaisingEvents = true;
@@ -145,12 +140,12 @@ namespace HostsWatcher {
         }
 
         private void OnRenamedLicense(object source, RenamedEventArgs e) {
-            Log($"{e.OldName} Renomeado como {e.Name}.", Color.LightBlue);
+            Log($"{e.OldName} Renomeado como {e.Name}.", Color.Yellow, true);
             RestoreLicense(e.FullPath);
         }
 
         private void OnDeletedLicense(object sender, FileSystemEventArgs e) {
-            Log($"{e.Name} deletado.", Color.LightBlue);
+            Log($"{e.Name} deletado.", Color.Yellow, true);
             RestoreLicense(e.FullPath);
         }
 
@@ -162,7 +157,7 @@ namespace HostsWatcher {
             var licença = Directory.GetFiles($"{Application.StartupPath}\\licença", file.Name)
                 .Select(f => new FileInfo(f)).FirstOrDefault();
             if (licença == null) {
-                Log($"Licença original {file.Name} não encontrada.", Color.Yellow);
+                Log($"Licença original {file.Name} não encontrada.", Color.OrangeRed);
                 return;
             }
 
@@ -171,8 +166,8 @@ namespace HostsWatcher {
             }
 
             File.Copy(licença.FullName, fullpath);
-            Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
-            ShowPopup($"Arquivo {licença.Name} restaurado do backup.");
+            Log($"Arquivo {licença.Name} restaurado do backup.", Color.Orange, false, true);
+            //ShowPopup($"Arquivo {licença.Name} restaurado do backup.");
 
             FSW_License.EnableRaisingEvents = true;
         }
@@ -196,14 +191,14 @@ namespace HostsWatcher {
                     issues.Add(issue);
                 }
                 else {
-                    var issue = $"Arquivo {licença.Name} alterado.";
+                    var issue = $"Arquivo {licença.Name} alterado {arquivo.LastWriteTime:G}.";
                     File.Delete(arquivo.FullName);
                     Log(issue, Color.Yellow);
                     issues.Add(issue);
                 }
 
                 File.Copy(licença.FullName, $"{FSW_License.Path}\\{licença.Name}");
-                Log($"Arquivo {licença.Name} restaurado do backup.", Color.LightCoral);
+                Log($"Arquivo {licença.Name} restaurado do backup.", Color.Orange);
             }
             ShowPopup(issues.Any()
                 ? string.Join("Arquivos restaurados do backup:\n\n", issues.ToArray())
@@ -229,7 +224,11 @@ namespace HostsWatcher {
             popup.Popup();
         }
 
-        private void Log(string text, Color color, bool includeTime = false) {
+        private void Log(string text, Color color, bool includeTime = false, bool popup = false) {
+            if (popup && this.WindowState != FormWindowState.Minimized) {
+                ShowPopup(text);
+            }
+
             notifyIcon.BalloonTipText = $"{++_alteracoes} alterações";
 
             text = includeTime ? $"{DateTime.Now:G} {text}" : $"\t{text}";
